@@ -49,6 +49,13 @@ MongoClient.connect(url, (err, client) => {
             res.send(result.insertedCount > 0)
         })
     })
+    // add order
+    app.post("/add-order", (req, res) => {
+        const newOrder = req.body;
+        ordersCollection.insertOne(newOrder).then(result => {
+            res.send(result.insertedCount > 0)
+        })
+    })
 
     // Get Requests
     app.get('/services', (req, res) => {
@@ -56,8 +63,15 @@ MongoClient.connect(url, (err, client) => {
             res.send(documents)
         })
     })
+    // get reviews
     app.get('/reviews', (req, res) => {
         reviewsCollection.find({}).toArray((err, documents) => {
+            res.send(documents)
+        })
+    })
+    // get orders
+    app.get('/orders', (req, res) => {
+        ordersCollection.find({}).toArray((err, documents) => {
             res.send(documents)
         })
     })
