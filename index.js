@@ -20,7 +20,7 @@ app.use(express.static('services'));
 app.use(fileUpload())
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.6kmmo.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`;
-const port = process.env.PORT || 4200;
+const port = process.env.PORT || 4000;
 const dbname = process.env.DB_NAME
 
 app.get("/", (req, res) => {
