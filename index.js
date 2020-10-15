@@ -5,7 +5,15 @@ const MongoClient = require("mongodb").MongoClient;
 const ObjectId = require("mongodb").ObjectId;
 const morgan = require("morgan");
 const fileUpload = require('express-fileupload')
+const admin = require('firebase-admin')
 require("dotenv").config();
+
+const serviceAccount = require("./creative-agency-live-firebase-adminsdk-ivh94-96ff1533e7.json");
+
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    databaseURL: "https://creative-agency-live.firebaseio.com"
+});
 
 const app = express();
 app.use(morgan("dev"));
@@ -25,6 +33,7 @@ MongoClient.connect(url, (err, client) => {
     const servicesCollection = db.collection("services");
     const ordersCollection = db.collection("orders");
     const reviewsCollection = db.collection("reviews");
+    const adminsCollection = db.collection("admins");
     // post services
     app.post("/add-service", (req, res) => {
         const icon = req.files.icon;
@@ -56,6 +65,12 @@ MongoClient.connect(url, (err, client) => {
             res.send(result.insertedCount > 0)
         })
     })
+    app.post("/add-admin", (req, res) => {
+        const newAdmin = req.body;
+        adminsCollection.insertOne(newAdmin).then(result => {
+            res.send(result.insertedCount > 0)
+        })
+    })
 
     // Get Requests
     app.get('/services', (req, res) => {
@@ -63,9 +78,14 @@ MongoClient.connect(url, (err, client) => {
             res.send(documents)
         })
     })
+    app.get('/services/:id', (req, res) => {
+        servicesCollection.find({ _id: ObjectId(req.params.id) }).toArray((err, documents) => {
+            res.send(documents)
+        })
+    })
     // get reviews
     app.get('/reviews', (req, res) => {
-        reviewsCollection.find({}).toArray((err, documents) => {
+        reviewsCollection.find({}).sort({ timeStamp: -1 }).limit(6).toArray((err, documents) => {
             res.send(documents)
         })
     })
@@ -74,6 +94,41 @@ MongoClient.connect(url, (err, client) => {
         ordersCollection.find({}).toArray((err, documents) => {
             res.send(documents)
         })
+    })
+    app.get('/admin-list', (req, res) => {
+        adminsCollection.find({}).sort({ timeStamp: -1 }).toArray((err, documents) => {
+            res.send(documents)
+        })
+    })
+    app.get('/user/orders', (req, res) => {
+        const bearer = req.headers.authorization;
+        if (bearer && bearer.startsWith('Bearer ')) {
+            const idToken = bearer.split(' ')[1];
+            admin.auth().verifyIdToken(idToken)
+                .then((decodedToken) => {
+                    let tokenEmail = decodedToken.email;
+                    if (req.query.email === tokenEmail) {
+                        ordersCollection.find({ email: req.query.email }).toArray((err, documents) => {
+                            res.status(200).send(documents)
+                        })
+                    } else {
+                        res.status(401).send('unauthorized access')
+                    }
+                }).catch(error => {
+                    res.status(401).send('unauthorized access')
+
+                })
+
+        } else { res.status(401).send('unauthorized access') }
+    })
+    // update-order
+    app.patch('/update-order/:id', (req, res) => {
+        ordersCollection.updateOne({ _id: ObjectId(req.params.id) },
+            {
+                $set: { status: req.body.currentStatus }
+            }).then(result => {
+                res.send(req.body.currentStatus)
+            })
     })
 
 });
