@@ -41,6 +41,12 @@ client.connect((err) => {
     const adminsCollection = db.collection("admins");
     // post services
     app.post("/add-service", (req, res) => {
+        const newService = req.body;
+        servicesCollection.insertOne(newService).then(
+            result => {
+                res.send(result.insertedCount > 0)
+            }
+        )
         const icon = req.files.icon;
         const title = req.body.title;
         const description = req.body.description;
