@@ -47,20 +47,6 @@ client.connect((err) => {
                 res.send(result.insertedCount > 0)
             }
         )
-        const icon = req.files.icon;
-        const title = req.body.title;
-        const description = req.body.description;
-        icon.mv(`${__dirname}/services/${icon.name}`, err => {
-            if (err) {
-                console.log(err);
-                return res.status(500).send({ msg: "Failed to upload image" })
-            }
-            servicesCollection.insertOne({ icon: icon.name, title, description }).then(
-                result => {
-                    res.send(result.insertedCount > 0)
-                }
-            )
-        })
     })
     // add review
     app.post("/add-review", (req, res) => {
