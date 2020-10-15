@@ -3,31 +3,36 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const MongoClient = require("mongodb").MongoClient;
 const ObjectId = require("mongodb").ObjectId;
-const morgan = require("morgan");
 const fileUpload = require('express-fileupload')
 const admin = require('firebase-admin')
 require("dotenv").config();
 
 const serviceAccount = require("./creative-agency-live-firebase-adminsdk-ivh94-96ff1533e7.json");
-
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
     databaseURL: "https://creative-agency-live.firebaseio.com"
 });
 
 const app = express();
-app.use(morgan("dev"));
 app.use(bodyParser.json());
 app.use(cors());
 app.use(express.static('services'));
 app.use(fileUpload())
 
-const port = 4000;
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.6kmmo.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`;
+const port = process.env.PORT || 4200;
+const dbname = process.env.DB_NAME
 
-const url = process.env.DB_URL;
-const dbname = "creativeAgency";
+app.get("/", (req, res) => {
+    res.send("Hello world!");
+});
 
-MongoClient.connect(url, (err, client) => {
+const client = new MongoClient(uri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+});
+
+client.connect((err) => {
     console.log("connected db");
     const db = client.db(dbname);
     const servicesCollection = db.collection("services");
@@ -133,9 +138,7 @@ MongoClient.connect(url, (err, client) => {
 
 });
 
-app.get("/", (req, res) => {
-    res.send("Hello world!");
-});
+
 app.listen(port, () => {
     console.log("Example app listening to localhost:4000");
 });
