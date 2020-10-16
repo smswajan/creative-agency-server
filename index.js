@@ -68,67 +68,74 @@ client.connect((err) => {
             res.send(result.insertedCount > 0)
         })
     })
-
-    // Get Requests
-    app.get('/services', (req, res) => {
-        servicesCollection.find({}).toArray((err, documents) => {
-            res.send(documents)
-        })
-    })
-    app.get('/services/:id', (req, res) => {
-        servicesCollection.find({ _id: ObjectId(req.params.id) }).toArray((err, documents) => {
-            res.send(documents)
-        })
-    })
-    // get reviews
-    app.get('/reviews', (req, res) => {
-        reviewsCollection.find({}).sort({ timeStamp: -1 }).limit(6).toArray((err, documents) => {
-            res.send(documents)
-        })
-    })
-    // get orders
-    app.get('/orders', (req, res) => {
-        ordersCollection.find({}).toArray((err, documents) => {
-            res.send(documents)
-        })
-    })
-    app.get('/admin-list', (req, res) => {
-        adminsCollection.find({}).sort({ timeStamp: -1 }).toArray((err, documents) => {
-            res.send(documents)
-        })
-    })
-    app.get('/user/orders', (req, res) => {
-        const bearer = req.headers.authorization;
-        if (bearer && bearer.startsWith('Bearer ')) {
-            const idToken = bearer.split(' ')[1];
-            admin.auth().verifyIdToken(idToken)
-                .then((decodedToken) => {
-                    let tokenEmail = decodedToken.email;
-                    if (req.query.email === tokenEmail) {
-                        ordersCollection.find({ email: req.query.email }).toArray((err, documents) => {
-                            res.status(200).send(documents)
-                        })
-                    } else {
-                        res.status(401).send('unauthorized access')
-                    }
-                }).catch(error => {
-                    res.status(401).send('unauthorized access')
-
-                })
-
-        } else { res.status(401).send('unauthorized access') }
-    })
-    // update-order
-    app.patch('/update-order/:id', (req, res) => {
-        ordersCollection.updateOne({ _id: ObjectId(req.params.id) },
-            {
-                $set: { status: req.body.currentStatus }
-            }).then(result => {
-                res.send(req.body.currentStatus)
+    app.post("/is-admin", (req, res) => {
+        const email = req.body.email;
+        adminsCollection.find({ email: email })
+            .toArray((err, admins) => {
+                res.send(admins.length > 0)
             })
     })
+})
 
-});
+// Get Requests
+app.get('/services', (req, res) => {
+    servicesCollection.find({}).toArray((err, documents) => {
+        res.send(documents)
+    })
+})
+app.get('/services/:id', (req, res) => {
+    servicesCollection.find({ _id: ObjectId(req.params.id) }).toArray((err, documents) => {
+        res.send(documents)
+    })
+})
+// get reviews
+app.get('/reviews', (req, res) => {
+    reviewsCollection.find({}).sort({ timeStamp: -1 }).limit(6).toArray((err, documents) => {
+        res.send(documents)
+    })
+})
+// get orders
+app.get('/orders', (req, res) => {
+    ordersCollection.find({}).toArray((err, documents) => {
+        res.send(documents)
+    })
+})
+app.get('/admin-list', (req, res) => {
+    adminsCollection.find({}).sort({ timeStamp: -1 }).toArray((err, documents) => {
+        res.send(documents)
+    })
+})
+app.get('/user/orders', (req, res) => {
+    const bearer = req.headers.authorization;
+    if (bearer && bearer.startsWith('Bearer ')) {
+        const idToken = bearer.split(' ')[1];
+        admin.auth().verifyIdToken(idToken)
+            .then((decodedToken) => {
+                let tokenEmail = decodedToken.email;
+                if (req.query.email === tokenEmail) {
+                    ordersCollection.find({ email: req.query.email }).toArray((err, documents) => {
+                        res.status(200).send(documents)
+                    })
+                } else {
+                    res.status(401).send('unauthorized access')
+                }
+            }).catch(error => {
+                res.status(401).send('unauthorized access')
+
+            })
+
+    } else { res.status(401).send('unauthorized access') }
+})
+// update-order
+app.patch('/update-order/:id', (req, res) => {
+    ordersCollection.updateOne({ _id: ObjectId(req.params.id) },
+        {
+            $set: { status: req.body.currentStatus }
+        }).then(result => {
+            res.send(req.body.currentStatus)
+        })
+})
+
 
 
 app.listen(port, () => {
